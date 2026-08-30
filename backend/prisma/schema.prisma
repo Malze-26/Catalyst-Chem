@@ -1,0 +1,67 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  password_hash String
+  target_board  String         @default("Edexcel") // "Edexcel" | "Cambridge"
+  created_at    DateTime       @default(now())
+  progress      UserProgress[]
+
+  @@map("users")
+}
+
+model Topic {
+  id          String         @id @default(uuid())
+  board       String         // "Edexcel" | "Cambridge"
+  level       String         @default("IGCSE") // "IGCSE" | "A_Level"
+  title       String
+  description String?
+  questions   Question[]
+  progress    UserProgress[]
+
+  @@map("topics")
+}
+
+model Question {
+  id             String   @id @default(uuid())
+  topic_id       String
+  question_text  String
+  options        String   // JSON stringified array of options e.g. '["Option A", "Option B", ...]'
+  correct_option Int      // Index 0 to 3
+  explanation    String?
+  topic          Topic    @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+
+  @@map("questions")
+}
+
+model PastPaper {
+  id           String   @id @default(uuid())
+  board        String   // "Edexcel" | "Cambridge"
+  year         Int
+  paper_number String
+  pdf_url      String
+  created_at   DateTime @default(now())
+
+  @@map("past_papers")
+}
+
+model UserProgress {
+  id           String   @id @default(uuid())
+  user_id      String
+  topic_id     String
+  score        Float    // Percentage accuracy (0 - 100)
+  completed_at DateTime @default(now())
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  topic        Topic    @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+
+  @@map("user_progress")
+}
